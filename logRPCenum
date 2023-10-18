@@ -13,9 +13,9 @@ purpleColour="\e[0;35m\033[1m"
 turquoiseColour="\e[0;36m\033[1m"
 grayColour="\e[0;37m\033[1m"
 
-declare -r tmp_file="/dev/shm/tmp_file"
-declare -r tmp_file2="/dev/shm/tmp_file2"
-declare -r tmp_file3="/dev/shm/tmp_file3"
+declare -r tmp_file="/tmp/tmp_file"
+declare -r tmp_file2="/tmp/tmp_file2"
+declare -r tmp_file3="/tmp/tmp_file3"
 
 function ctrl_c(){
 
@@ -206,11 +206,8 @@ function extract_All(){
 
 function beginEnumeration(){
 
-	tput civis; nmap -p139 --open -T5 -v -n $host_ip | grep open > /dev/null 2>&1 && port_status=$?
-	rpcclient -U "${username}%${password}" $host_ip -c "enumdomusers" > /dev/null 2>&1
+	if rpcclient -U "${username}%${password}" $host_ip -c "enumdomusers" > /dev/null 2>&1; then
 
-	if [ "$(echo $?)" == "0" ]; then
-		if [ "$port_status" == "0" ]; then
 			case $enum_mode in
 				DUsers)
 					extract_DUsers $host_ip
@@ -228,24 +225,19 @@ function beginEnumeration(){
 					extract_All $host_ip
 					;;
 				*)
-					echo -e "\n${redColour}[!] Opción no válida${endColour}"
+					echo -e "\n${redColour}[!] Invalid Option ${endColour}"
 					helpPanel
 					exit 1
 					;;
 			esac
 		else
-			echo -e "\n${redColour}Port 139 seems to be closed on $host_ip${endColour}"
+			echo -e "\n${redColour}Access Denied $host_ip${endColour}"
 			tput cnorm; exit 0
-		fi
-	else
-		echo -e "\n${redColour}[!] Error: Access Denied${endColour}"
-		tput cnorm; exit 0
 	fi
 }
 
 # Main Function
 
-if [ "$(echo $UID)" == "0" ]; then
 	declare -i parameter_counter=0; while getopts ":e:i:u:p:h:" arg; do
 		case $arg in
 			e) enum_mode=$OPTARG; let parameter_counter+=1;;
@@ -262,6 +254,4 @@ if [ "$(echo $UID)" == "0" ]; then
 		beginEnumeration
 		tput cnorm
 	fi
-else
-	echo -e "\n${redColour}[*] It is necessary to run the program as root${endColour}\n"
-fi
+
